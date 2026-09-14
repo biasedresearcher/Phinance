@@ -39,7 +39,7 @@ export default function InvestmentsPage() {
 
     const { data, error: investmentsError } = await supabase
       .from("investments")
-      .select("id, user_id, type_amount, current_value, date")
+      .select("id, user_id, type_amount, amount, current_value, date")
       .eq("user_id", user.id)
       .order("date", { ascending: false });
 
