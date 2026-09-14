@@ -1,39 +1,52 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FinanceData,
-  PHINANCE_STORAGE_KEY,
-  loadFinanceData,
-  saveFinanceData,
+  getEmptyFinanceData,
+  listFinanceData,
 } from "@/lib/finance-repository";
 
 export const useFinanceData = () => {
-  const [data, setData] = useState<FinanceData>(() => loadFinanceData());
-  const hasMounted = useRef(false);
+  const [data, setData] = useState<FinanceData>(getEmptyFinanceData);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasMounted.current) {
-      hasMounted.current = true;
-      return;
-    }
+    let cancelled = false;
 
-    saveFinanceData(data);
-  }, [data]);
+    const load = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  useEffect(() => {
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === PHINANCE_STORAGE_KEY || event.key === null) {
-        setData(loadFinanceData());
+        const financeData = await listFinanceData();
+
+        if (!cancelled) {
+          setData(financeData);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load finance data");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    window.addEventListener("storage", onStorage);
+    void load();
 
     return () => {
-      window.removeEventListener("storage", onStorage);
+      cancelled = true;
     };
   }, []);
 
-  return { data, setData };
+  return {
+    data,
+    setData,
+    isLoading,
+    error,
+  };
 };
