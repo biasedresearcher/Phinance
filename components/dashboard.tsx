@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { EmiEntry, ExpenseEntry, InvestmentEntry, SalaryEntry } from "@/lib/types";
-import AppShell from "./AppShell";
-import ExpenseBreakdownChart from "./ExpenseBreakdownChart";
+import { AppShell } from "./AppShell";
+import { ExpenseBreakdownChart } from "./ExpenseBreakdownChart";
 
 type Props = {
   expenses: ExpenseEntry[];
