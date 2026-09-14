@@ -22,7 +22,7 @@ type EmiDatabaseRow = {
   amount: number | string;
   monthly_installment: number | string;
   interest_rate: number | string | null;
-  "start date": string;
+  start_date: string;
 };
 
 export default function EmiPage() {
@@ -52,7 +52,7 @@ export default function EmiPage() {
     const { data, error: emisError } = await supabase
       .from("emi")
       .select(
-        'id, user_id, amount, monthly_installment, interest_rate, "start date"',
+        "id, user_id, amount, monthly_installment, interest_rate, start_date",
       )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
@@ -63,15 +63,15 @@ export default function EmiPage() {
       return;
     }
 
-    const convertedEmis: EmiEntry[] = ((data ?? []) as EmiDatabaseRow[]).map(
-      (entry) => ({
-        id: entry.id,
-        amount: Number(entry.amount),
-        monthlyInstallment: Number(entry.monthly_installment),
-        interestRate: Number(entry.interest_rate ?? 0),
-        startDate: entry["start date"],
-      }),
-    );
+    const convertedEmis: EmiEntry[] = (
+      (data ?? []) as EmiDatabaseRow[]
+    ).map((entry) => ({
+      id: entry.id,
+      amount: Number(entry.amount),
+      monthlyInstallment: Number(entry.monthly_installment),
+      interestRate: Number(entry.interest_rate ?? 0),
+      startDate: entry.start_date,
+    }));
 
     setEmis(convertedEmis);
     setLoading(false);
@@ -113,7 +113,7 @@ export default function EmiPage() {
           amount,
           monthly_installment: monthlyInstallment,
           interest_rate: interestRate,
-          "start date": form.startDate,
+          start_date: form.startDate,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingId)
@@ -139,10 +139,10 @@ export default function EmiPage() {
         amount,
         monthly_installment: monthlyInstallment,
         interest_rate: interestRate,
-        "start date": form.startDate,
+        start_date: form.startDate,
       })
       .select(
-        'id, user_id, amount, monthly_installment, interest_rate, "start date"',
+        "id, user_id, amount, monthly_installment, interest_rate, start_date",
       )
       .single();
 
@@ -159,7 +159,7 @@ export default function EmiPage() {
       amount: Number(savedRow.amount),
       monthlyInstallment: Number(savedRow.monthly_installment),
       interestRate: Number(savedRow.interest_rate ?? 0),
-      startDate: savedRow["start date"],
+      startDate: savedRow.start_date,
     };
 
     setEmis((current) => [savedEntry, ...current]);
@@ -328,66 +328,4 @@ export default function EmiPage() {
 
           {loading ? <p>Loading EMI entries...</p> : null}
 
-          {!loading && emis.length === 0 ? (
-            <p>No EMI entries saved yet.</p>
-          ) : null}
-
-          {!loading && emis.length > 0 ? (
-            <table className="w-full text-left text-sm">
-              <thead className="text-[var(--muted-foreground)]">
-                <tr>
-                  <th className="pb-3 font-medium">Amount</th>
-                  <th className="pb-3 font-medium">Monthly</th>
-                  <th className="pb-3 font-medium">Interest</th>
-                  <th className="pb-3 font-medium">Start</th>
-                  <th className="pb-3 text-right font-medium">Remaining</th>
-                  <th className="pb-3 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {emis.map((emi) => (
-                  <tr
-                    key={emi.id}
-                    className={`border-t border-[var(--border)]/80 ${
-                      newEntryId === emi.id ? "app-entry-new" : ""
-                    }`}
-                  >
-                    <td className="py-3">{formatCurrency(emi.amount)}</td>
-                    <td className="py-3">
-                      {formatCurrency(emi.monthlyInstallment)}
-                    </td>
-                    <td className="py-3">{emi.interestRate}%</td>
-                    <td className="py-3">{emi.startDate}</td>
-                    <td className="py-3 text-right font-medium">
-                      {getRemainingInstallments(emi)}
-                    </td>
-                    <td className="py-3 text-right">
-                      <div className="inline-flex gap-2">
-                        <button
-                          className="app-button-secondary px-3 py-1.5"
-                          type="button"
-                          onClick={() => onEdit(emi)}
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          className="app-button-danger px-3 py-1.5"
-                          type="button"
-                          onClick={() => onDelete(emi.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : null}
-        </div>
-      </div>
-    </AppShell>
-  );
-}
+          {!loading
