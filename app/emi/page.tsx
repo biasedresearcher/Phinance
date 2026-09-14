@@ -1,7 +1,10 @@
 "use client";
 
 import { AppShell } from "@/components/AppShell";
-import { formatCurrency, getRemainingInstallments } from "@/lib/finance-utils";
+import {
+  formatCurrency,
+  getRemainingInstallments,
+} from "@/lib/finance-utils";
 import { EmiEntry } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import { FormEvent, useEffect, useState } from "react";
@@ -11,6 +14,15 @@ const defaultForm = {
   monthlyInstallment: "",
   interestRate: "",
   startDate: new Date().toISOString().slice(0, 10),
+};
+
+type EmiDatabaseRow = {
+  id: string;
+  user_id: string;
+  amount: number | string;
+  monthly_installment: number | string;
+  interest_rate: number | string | null;
+  "start date": string;
 };
 
 export default function EmiPage() {
@@ -39,7 +51,9 @@ export default function EmiPage() {
 
     const { data, error: emisError } = await supabase
       .from("emi")
-      .select("id, user_id, amount, monthly_installment, interest_rate")
+      .select(
+        'id, user_id, amount, monthly_installment, interest_rate, "start date"',
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -49,13 +63,15 @@ export default function EmiPage() {
       return;
     }
 
-    const convertedEmis: EmiEntry[] = (data ?? []).map((entry) => ({
-      id: entry.id,
-      amount: Number(entry.amount),
-      monthlyInstallment: Number(entry.monthly_installment),
-      interestRate: Number(entry.interest_rate ?? 0),
-      startDate: defaultForm.startDate,
-    }));
+    const convertedEmis: EmiEntry[] = ((data ?? []) as EmiDatabaseRow[]).map(
+      (entry) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        monthlyInstallment: Number(entry.monthly_installment),
+        interestRate: Number(entry.interest_rate ?? 0),
+        startDate: entry["start date"],
+      }),
+    );
 
     setEmis(convertedEmis);
     setLoading(false);
@@ -72,7 +88,7 @@ export default function EmiPage() {
     const monthlyInstallment = Number(form.monthlyInstallment);
     const interestRate = Number(form.interestRate);
 
-    if (!amount || !monthlyInstallment) {
+    if (!amount || !monthlyInstallment || !form.startDate) {
       return;
     }
 
@@ -97,6 +113,7 @@ export default function EmiPage() {
           amount,
           monthly_installment: monthlyInstallment,
           interest_rate: interestRate,
+          "start date": form.startDate,
           updated_at: new Date().toISOString(),
         })
         .eq("id", editingId)
@@ -122,8 +139,11 @@ export default function EmiPage() {
         amount,
         monthly_installment: monthlyInstallment,
         interest_rate: interestRate,
+        "start date": form.startDate,
       })
-      .select("id, user_id, amount, monthly_installment, interest_rate")
+      .select(
+        'id, user_id, amount, monthly_installment, interest_rate, "start date"',
+      )
       .single();
 
     if (insertError) {
@@ -132,12 +152,14 @@ export default function EmiPage() {
       return;
     }
 
+    const savedRow = savedEmi as EmiDatabaseRow;
+
     const savedEntry: EmiEntry = {
-      id: savedEmi.id,
-      amount: Number(savedEmi.amount),
-      monthlyInstallment: Number(savedEmi.monthly_installment),
-      interestRate: Number(savedEmi.interest_rate ?? 0),
-      startDate: form.startDate,
+      id: savedRow.id,
+      amount: Number(savedRow.amount),
+      monthlyInstallment: Number(savedRow.monthly_installment),
+      interestRate: Number(savedRow.interest_rate ?? 0),
+      startDate: savedRow["start date"],
     };
 
     setEmis((current) => [savedEntry, ...current]);
@@ -203,10 +225,18 @@ export default function EmiPage() {
   };
 
   return (
-    <AppShell title="EMI Tracker" subtitle="Track loans and automatically estimate remaining instalments.">
+    <AppShell
+      title="EMI Tracker"
+      subtitle="Track loans and automatically estimate remaining instalments."
+    >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <form className="app-card space-y-4 p-5 lg:col-span-2" onSubmit={onSubmit}>
-          <h2 className="text-xl font-semibold">{editingId ? "Edit EMI" : "Add EMI"}</h2>
+        <form
+          className="app-card space-y-4 p-5 lg:col-span-2"
+          onSubmit={onSubmit}
+        >
+          <h2 className="text-xl font-semibold">
+            {editingId ? "Edit EMI" : "Add EMI"}
+          </h2>
 
           <input
             className="app-input"
@@ -216,7 +246,12 @@ export default function EmiPage() {
             required
             placeholder="Loan amount"
             value={form.amount}
-            onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                amount: event.target.value,
+              }))
+            }
           />
 
           <input
@@ -264,7 +299,11 @@ export default function EmiPage() {
             }
           />
 
-          <button className="app-button-primary" type="submit" disabled={saving}>
+          <button
+            className="app-button-primary"
+            type="submit"
+            disabled={saving}
+          >
             {saving ? "Saving..." : editingId ? "Update EMI" : "Add EMI"}
           </button>
 
@@ -289,7 +328,9 @@ export default function EmiPage() {
 
           {loading ? <p>Loading EMI entries...</p> : null}
 
-          {!loading && emis.length === 0 ? <p>No EMI entries saved yet.</p> : null}
+          {!loading && emis.length === 0 ? (
+            <p>No EMI entries saved yet.</p>
+          ) : null}
 
           {!loading && emis.length > 0 ? (
             <table className="w-full text-left text-sm">
@@ -313,7 +354,9 @@ export default function EmiPage() {
                     }`}
                   >
                     <td className="py-3">{formatCurrency(emi.amount)}</td>
-                    <td className="py-3">{formatCurrency(emi.monthlyInstallment)}</td>
+                    <td className="py-3">
+                      {formatCurrency(emi.monthlyInstallment)}
+                    </td>
                     <td className="py-3">{emi.interestRate}%</td>
                     <td className="py-3">{emi.startDate}</td>
                     <td className="py-3 text-right font-medium">
