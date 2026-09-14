@@ -2,11 +2,11 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
-const COLORS = ["#4f46e5", "#6366f1", "#0f766e", "#0284c7", "#f59e0b", "#7c3aed", "#64748b"];
+const COLORS = ["#b75e3b", "#8f5f44", "#6d7d41", "#a68a52", "#c97447", "#7f6b4d", "#4f5c34"];
 
 export function ExpenseBreakdownChart({ data }: { data: { name: string; value: number }[] }) {
   if (data.length === 0) {
-    return <p className="text-sm text-slate-500">No expenses logged for this month yet.</p>;
+    return <p className="text-sm text-[var(--muted-foreground)]">No expenses logged for this month yet.</p>;
   }
 
   return (
@@ -21,8 +21,9 @@ export function ExpenseBreakdownChart({ data }: { data: { name: string; value: n
           <Tooltip
             contentStyle={{
               borderRadius: "12px",
-              borderColor: "#cbd5e1",
-              boxShadow: "0 8px 24px -12px rgba(15, 23, 42, 0.25)",
+              borderColor: "#d3c2aa",
+              boxShadow: "0 10px 24px -16px rgba(61, 42, 27, 0.45)",
+              backgroundColor: "#f8f0e3",
             }}
             formatter={(value) => `₹${Number(value ?? 0).toLocaleString("en-IN")}`}
           />
@@ -30,13 +31,13 @@ export function ExpenseBreakdownChart({ data }: { data: { name: string; value: n
       </ResponsiveContainer>
       <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
         {data.map((item, index) => (
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2" key={item.name}>
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-            />
-            <span className="text-slate-700">{item.name}</span>
-            <span className="ml-auto font-semibold text-slate-900">₹{item.value.toLocaleString("en-IN")}</span>
+          <div
+            className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
+            key={item.name}
+          >
+            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+            <span className="text-[var(--muted-foreground)]">{item.name}</span>
+            <span className="ml-auto font-semibold text-[var(--foreground)]">₹{item.value.toLocaleString("en-IN")}</span>
           </div>
         ))}
       </div>
