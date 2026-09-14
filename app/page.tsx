@@ -8,15 +8,82 @@ import {
   getCurrentMonthIncomeAndExpenses,
   getExpenseBreakdown,
 } from "@/lib/finance-utils";
-import { useFinanceData } from "@/lib/use-finance-data";
 import { supabase } from "@/lib/supabase";
+import { ExpenseEntry, SalaryEntry } from "@/lib/types";
 
 export default function DashboardPage() {
-  const { data } = useFinanceData();
+  const [expenses, setExpenses] = useState<ExpenseEntry[]>([]);
+  const [salary, setSalary] = useState<SalaryEntry[]>([]);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    setError(null);
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      window.location.replace("/login");
+      return;
+    }
+
+    const [expensesResult, salaryResult] = await Promise.all([
+      supabase
+        .from("expenses")
+        .select("id, user_id, amount, category, date, note")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false }),
+
+      supabase
+        .from("salary")
+        .select("id, user_id, month, amount, credited_on")
+        .eq("user_id", user.id)
+        .order("month", { ascending: false }),
+    ]);
+
+    if (expensesResult.error) {
+      setError(expensesResult.error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (salaryResult.error) {
+      setError(salaryResult.error.message);
+      setLoading(false);
+      return;
+    }
+
+    const convertedExpenses: ExpenseEntry[] = (expensesResult.data ?? []).map(
+      (entry) => ({
+        id: entry.id,
+        amount: Number(entry.amount),
+        category: entry.category as ExpenseEntry["category"],
+        date: entry.date,
+        note: entry.note ?? "",
+      }),
+    );
+
+    const convertedSalary: SalaryEntry[] = (salaryResult.data ?? []).map(
+      (entry) => ({
+        id: entry.id,
+        month: entry.month,
+        amount: Number(entry.amount),
+        creditedOn: entry.credited_on,
+      }),
+    );
+
+    setExpenses(convertedExpenses);
+    setSalary(convertedSalary);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const checkSession = async () => {
+    const checkSessionAndLoadData = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
 
       if (!sessionData.session) {
@@ -25,9 +92,10 @@ export default function DashboardPage() {
       }
 
       setIsCheckingSession(false);
+      await loadDashboardData();
     };
 
-    void checkSession();
+    void checkSessionAndLoadData();
   }, []);
 
   const handleSignOut = async () => {
@@ -35,22 +103,40 @@ export default function DashboardPage() {
     window.location.replace("/login");
   };
 
-  if (isCheckingSession) {
+  if (isCheckingSession || loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--background)] text-[var(--foreground)]">
         <p className="text-sm text-[var(--muted-foreground)]">
-          Checking your account…
+          Loading your dashboard…
         </p>
       </main>
     );
   }
 
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[var(--background)] px-6 text-[var(--foreground)]">
+        <div className="app-card max-w-md p-6 text-center">
+          <p className="text-sm text-red-500">{error}</p>
+          <button
+            className="app-button-secondary mt-4"
+            type="button"
+            onClick={() => void loadDashboardData()}
+          >
+            Try again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   const { income, outgoing } = getCurrentMonthIncomeAndExpenses(
-    data.salary,
-    data.expenses,
+    salary,
+    expenses,
   );
+
   const balance = income - outgoing;
-  const categoryData = getExpenseBreakdown(data.expenses);
+  const categoryData = getExpenseBreakdown(expenses);
 
   return (
     <AppShell
@@ -72,6 +158,7 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-[var(--muted-foreground)]">
             Current Month Income
           </p>
+
           <p className="mt-3 text-3xl font-semibold text-[var(--olive-strong)]">
             {formatCurrency(income)}
           </p>
@@ -81,6 +168,7 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-[var(--muted-foreground)]">
             Current Month Expenses
           </p>
+
           <p className="mt-3 text-3xl font-semibold text-[var(--accent-strong)]">
             {formatCurrency(outgoing)}
           </p>
@@ -90,6 +178,7 @@ export default function DashboardPage() {
           <p className="text-sm font-medium text-[var(--muted-foreground)]">
             Net Balance
           </p>
+
           <p
             className={`mt-3 text-3xl font-semibold ${
               balance >= 0
