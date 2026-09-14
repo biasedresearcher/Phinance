@@ -39,12 +39,12 @@ export default function InvestmentsPage() {
     <AppShell title="Investments" subtitle="Log SIP and lump-sum investments with current market value.">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <form
-          className="space-y-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 lg:col-span-2"
+          className="app-card space-y-4 p-5 lg:col-span-2"
           onSubmit={onSubmit}
         >
-          <h2 className="text-lg font-semibold">Add Investment</h2>
+          <h2 className="text-xl font-semibold">Add Investment</h2>
           <select
-            className="w-full rounded-lg border border-slate-300 p-2"
+            className="app-input"
             value={form.type}
             onChange={(e) => setForm((s) => ({ ...s, type: e.target.value as InvestmentType }))}
           >
@@ -52,7 +52,7 @@ export default function InvestmentsPage() {
             <option value="Lump Sum">Lump Sum</option>
           </select>
           <input
-            className="w-full rounded-lg border border-slate-300 p-2"
+            className="app-input"
             type="number"
             min="0"
             step="0.01"
@@ -62,7 +62,7 @@ export default function InvestmentsPage() {
             onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
           />
           <input
-            className="w-full rounded-lg border border-slate-300 p-2"
+            className="app-input"
             type="number"
             min="0"
             step="0.01"
@@ -72,14 +72,14 @@ export default function InvestmentsPage() {
             onChange={(e) => setForm((s) => ({ ...s, currentValue: e.target.value }))}
           />
           <input
-            className="w-full rounded-lg border border-slate-300 p-2"
+            className="app-input"
             type="date"
             required
             value={form.date}
             onChange={(e) => setForm((s) => ({ ...s, date: e.target.value }))}
           />
           <button
-            className="w-full rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+            className="app-button-primary"
             type="submit"
           >
             Add Investment
@@ -90,12 +90,12 @@ export default function InvestmentsPage() {
           {investments.map((entry) => {
             const gain = entry.currentValue - entry.amount;
             return (
-              <article className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200" key={entry.id}>
-                <p className="text-sm text-slate-500">{entry.type}</p>
+              <article className="app-card p-5" key={entry.id}>
+                <p className="text-sm font-medium text-slate-500">{entry.type}</p>
                 <p className="text-xs text-slate-400">{entry.date}</p>
-                <p className="mt-2 text-sm">Invested: {formatCurrency(entry.amount)}</p>
+                <p className="mt-3 text-sm">Invested: {formatCurrency(entry.amount)}</p>
                 <p className="text-sm">Current: {formatCurrency(entry.currentValue)}</p>
-                <p className={`mt-2 text-sm font-medium ${gain >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                <p className={`mt-3 text-sm font-semibold ${gain >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                   {gain >= 0 ? "Gain" : "Loss"}: {formatCurrency(gain)}
                 </p>
               </article>
