@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f1f5f9;
-  --surface: #ffffff;
-  --surface-muted: #f8fafc;
-  --foreground: #0f172a;
-  --muted-foreground: #475569;
-  --border: #dbe4f0;
-  --primary: #4f46e5;
-  --primary-strong: #4338ca;
+  --background: #efe3d1;
+  --surface: #f8f0e3;
+  --surface-muted: #f2e5d2;
+  --foreground: #3d2a1b;
+  --muted-foreground: #6f573d;
+  --border: #d3c2aa;
+  --primary: #b75e3b;
+  --primary-strong: #9f4e2f;
+  --accent-strong: #8f3f24;
+  --olive: #6d7d41;
+  --olive-strong: #556533;
+  --danger: #8a3528;
   --radius-sm: 0.625rem;
   --radius-md: 0.875rem;
   --radius-lg: 1.125rem;
-  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 8px 24px -20px rgb(15 23 42 / 0.35);
-  --shadow-md: 0 6px 18px -12px rgb(15 23 42 / 0.4);
+  --shadow-sm: 0 1px 2px 0 rgb(61 42 27 / 0.1), 0 10px 24px -20px rgb(61 42 27 / 0.45);
+  --shadow-md: 0 8px 20px -14px rgb(61 42 27 / 0.5);
 }
 
 @theme inline {
@@ -48,6 +52,12 @@
     border-radius: var(--radius-lg);
     background: var(--surface);
     box-shadow: var(--shadow-sm);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .app-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
   }
 
   .app-input {
@@ -58,9 +68,10 @@
   }
 
   .app-input:focus-visible {
-    @apply outline-none ring-2 ring-indigo-500/35;
+    @apply outline-none ring-2;
     border-color: var(--primary);
     background: var(--surface);
+    box-shadow: 0 0 0 3px rgb(183 94 59 / 0.25);
   }
 
   .app-button-primary {
@@ -72,10 +83,34 @@
 
   .app-button-primary:hover {
     background: var(--primary-strong);
+    transform: translateY(-1px);
   }
 
-  .app-button-primary:focus-visible {
-    @apply outline-none ring-2 ring-indigo-500/35 ring-offset-2 ring-offset-slate-100;
+  .app-button-primary:focus-visible,
+  .app-button-secondary:focus-visible,
+  .app-button-danger:focus-visible {
+    @apply outline-none ring-2;
+    box-shadow: 0 0 0 3px rgb(183 94 59 / 0.25);
+  }
+
+  .app-button-secondary,
+  .app-button-danger {
+    @apply inline-flex items-center justify-center border px-4 py-2 text-sm font-semibold transition;
+    border-radius: var(--radius-md);
+    background: var(--surface-muted);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+
+  .app-button-secondary:hover,
+  .app-button-danger:hover {
+    transform: translateY(-1px);
+    background: #e8d8c2;
+  }
+
+  .app-button-danger {
+    color: var(--danger);
+    border-color: #b5796f;
   }
 
   .app-nav-link {
@@ -84,12 +119,43 @@
   }
 
   .app-nav-link:hover {
-    @apply bg-slate-100;
+    background: var(--surface-muted);
     color: var(--foreground);
   }
 
   .app-nav-link-active {
-    @apply bg-indigo-600 text-white;
+    color: #fff;
+    background: var(--primary);
     box-shadow: var(--shadow-md);
+  }
+
+  .app-fade-in {
+    animation: app-fade-in 260ms ease-out;
+  }
+
+  .app-entry-new {
+    animation: app-slide-in 320ms ease-out;
+  }
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes app-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
