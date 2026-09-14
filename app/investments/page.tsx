@@ -13,6 +13,15 @@ const defaultForm = {
   date: new Date().toISOString().slice(0, 10),
 };
 
+type InvestmentDatabaseRow = {
+  id: string;
+  user_id: string;
+  type: string;
+  amount: number | string;
+  current_value: number | string;
+  date: string;
+};
+
 export default function InvestmentsPage() {
   const [investments, setInvestments] = useState<InvestmentEntry[]>([]);
   const [form, setForm] = useState(defaultForm);
@@ -39,7 +48,7 @@ export default function InvestmentsPage() {
 
     const { data, error: investmentsError } = await supabase
       .from("investments")
-      .select("id, user_id, type_amount, amount, current_value, date")
+      .select("id, user_id, type, amount, current_value, date")
       .eq("user_id", user.id)
       .order("date", { ascending: false });
 
@@ -49,9 +58,11 @@ export default function InvestmentsPage() {
       return;
     }
 
-    const convertedInvestments: InvestmentEntry[] = (data ?? []).map((entry) => ({
+    const convertedInvestments: InvestmentEntry[] = (
+      (data ?? []) as InvestmentDatabaseRow[]
+    ).map((entry) => ({
       id: entry.id,
-      type: entry.type_amount as InvestmentType,
+      type: entry.type as InvestmentType,
       amount: Number(entry.amount),
       currentValue: Number(entry.current_value),
       date: entry.date,
@@ -93,7 +104,7 @@ export default function InvestmentsPage() {
       const { error: updateError } = await supabase
         .from("investments")
         .update({
-          type_amount: form.type,
+          type: form.type,
           amount,
           current_value: currentValue,
           date: form.date,
@@ -119,12 +130,12 @@ export default function InvestmentsPage() {
       .from("investments")
       .insert({
         user_id: user.id,
-        type_amount: form.type,
+        type: form.type,
         amount,
         current_value: currentValue,
         date: form.date,
       })
-      .select("id, user_id, type_amount, amount, current_value, date")
+      .select("id, user_id, type, amount, current_value, date")
       .single();
 
     if (insertError) {
@@ -133,12 +144,14 @@ export default function InvestmentsPage() {
       return;
     }
 
+    const savedRow = savedInvestment as InvestmentDatabaseRow;
+
     const savedEntry: InvestmentEntry = {
-      id: savedInvestment.id,
-      type: savedInvestment.type_amount as InvestmentType,
-      amount: Number(savedInvestment.amount),
-      currentValue: Number(savedInvestment.current_value),
-      date: savedInvestment.date,
+      id: savedRow.id,
+      type: savedRow.type as InvestmentType,
+      amount: Number(savedRow.amount),
+      currentValue: Number(savedRow.current_value),
+      date: savedRow.date,
     };
 
     setInvestments((current) => [savedEntry, ...current]);
@@ -208,7 +221,10 @@ export default function InvestmentsPage() {
       subtitle="Log SIP and lump-sum investments with current market value."
     >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <form className="app-card space-y-4 p-5 lg:col-span-2" onSubmit={onSubmit}>
+        <form
+          className="app-card space-y-4 p-5 lg:col-span-2"
+          onSubmit={onSubmit}
+        >
           <h2 className="text-xl font-semibold">
             {editingId ? "Edit Investment" : "Add Investment"}
           </h2>
@@ -272,7 +288,11 @@ export default function InvestmentsPage() {
             }
           />
 
-          <button className="app-button-primary" type="submit" disabled={saving}>
+          <button
+            className="app-button-primary"
+            type="submit"
+            disabled={saving}
+          >
             {saving
               ? "Saving..."
               : editingId
