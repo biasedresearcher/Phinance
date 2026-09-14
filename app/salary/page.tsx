@@ -195,9 +195,15 @@ export default function SalaryPage() {
   };
 
   return (
-    <AppShell title="Salary" subtitle="Add, review, and manage monthly salary entries.">
+    <AppShell
+      title="Salary"
+      subtitle="Add, review, and manage monthly salary entries."
+    >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <form className="app-card space-y-4 p-5 lg:col-span-2" onSubmit={onSubmit}>
+        <form
+          className="app-card space-y-4 p-5 lg:col-span-2"
+          onSubmit={onSubmit}
+        >
           <h2 className="text-xl font-semibold">
             {editingId ? "Edit Salary" : "Add Salary"}
           </h2>
@@ -244,8 +250,16 @@ export default function SalaryPage() {
             }
           />
 
-          <button className="app-button-primary" type="submit" disabled={saving}>
-            {saving ? "Saving..." : editingId ? "Update Salary" : "Add Salary"}
+          <button
+            className="app-button-primary"
+            type="submit"
+            disabled={saving}
+          >
+            {saving
+              ? "Saving..."
+              : editingId
+                ? "Update Salary"
+                : "Add Salary"}
           </button>
 
           {editingId ? (
@@ -274,4 +288,55 @@ export default function SalaryPage() {
           ) : null}
 
           {!loading && salary.length > 0 ? (
-            <table className="w-full text-left
+            <table className="w-full text-left text-sm">
+              <thead className="text-[var(--muted-foreground)]">
+                <tr>
+                  <th className="pb-3 font-medium">Month</th>
+                  <th className="pb-3 font-medium">Credited On</th>
+                  <th className="pb-3 text-right font-medium">Amount</th>
+                  <th className="pb-3 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {salary.map((entry) => (
+                  <tr
+                    className={`border-t border-[var(--border)]/80 ${
+                      newEntryId === entry.id ? "app-entry-new" : ""
+                    }`}
+                    key={entry.id}
+                  >
+                    <td className="py-3">{entry.month}</td>
+                    <td className="py-3">{entry.creditedOn}</td>
+                    <td className="py-3 text-right font-medium">
+                      {formatCurrency(entry.amount)}
+                    </td>
+                    <td className="py-3 text-right">
+                      <div className="inline-flex gap-2">
+                        <button
+                          className="app-button-secondary px-3 py-1.5"
+                          type="button"
+                          onClick={() => onEdit(entry)}
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          className="app-button-danger px-3 py-1.5"
+                          type="button"
+                          onClick={() => onDelete(entry.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
