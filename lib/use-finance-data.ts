@@ -10,11 +10,11 @@ import {
 
 export const useFinanceData = () => {
   const [data, setData] = useState<FinanceData>(() => loadFinanceData());
-  const hasInitialized = useRef(false);
+  const hasMounted = useRef(false);
 
   useEffect(() => {
-    if (!hasInitialized.current) {
-      hasInitialized.current = true;
+    if (!hasMounted.current) {
+      hasMounted.current = true;
       return;
     }
 
@@ -23,15 +23,16 @@ export const useFinanceData = () => {
 
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
-      if (event.key !== PHINANCE_STORAGE_KEY) {
-        return;
+      if (event.key === PHINANCE_STORAGE_KEY || event.key === null) {
+        setData(loadFinanceData());
       }
-
-      setData(loadFinanceData());
     };
 
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
 
   return { data, setData };
