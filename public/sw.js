@@ -1,7 +1,7 @@
 /* Only public app shells and same-origin static assets are cached.
  * Personal finance data stays in localStorage; auth and API requests are excluded.
  * Bump the cache version when changing the app's offline shell contract. */
-const CACHE = "phinance-offline-v2.1";
+const CACHE = "phinance-offline-v2.2";
 const ROUTES = ["/", "/expenses", "/salary", "/accounts", "/planner", "/emi", "/investments", "/settings"];
 const ASSETS = ["/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 async function cacheAssets(html, cache) {

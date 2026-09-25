@@ -87,3 +87,15 @@ npm run test:e2e
 Unit tests cover migration, corrupted storage, failed writes, stale revisions, rupee/paise calculations, transfers, salary credit dates, amortization, payment allocation, budgets/commitments and Indian local dates. Embedded PostgreSQL tests exercise the actual SQL policies with two users, an anonymous role and stale cloud revisions. Browser tests cover entry/edit/delete, reload persistence, backup/restore, demo isolation, linked loan payments, mobile overflow, offline navigation and offline recording.
 
 On runtimes that prohibit executable WebAssembly memory, run the database tests with `node --wasm-jitless --import tsx --test tests/*.test.ts`. Browser tests accept `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` for an already installed headless Chromium. A real Supabase project's email delivery and deployed authentication callbacks still need verification after configuration.
+
+## Sign-in screen and passwords
+
+When Supabase is configured, every finance page waits for authentication before rendering its contents. Password sign-in is the default; email links remain available as a fallback. Without Supabase configuration, the original local-only app remains available.
+
+Existing email-link users: choose **Set or reset password**, enter the same email, and open the newest recovery link once. The app asks for a new password before opening the workspace. Already signed-in users can set a password in Settings. New users can create an account; Supabase email-confirmation requirements remain enabled as configured. All callbacks continue to use the existing `/settings` redirect.
+
+Password sign-in does not request an email. Signup confirmation, password recovery and magic links still use Supabase's shared email quota. The UI explains rate limits and pauses repeat email requests for 60 seconds; this is not a promise that the server quota resets after 60 seconds. Configure custom SMTP for reliable production delivery. Do not disable email confirmation to work around sending limits.
+
+The sign-in screen is a client-side access screen, not encryption of local records or server-side protection of public app assets. Supabase RLS protects remote records. Local records remain in the browser profile after sign-out and are not partitioned by account; use one personal account per private browser profile. Offline use requires an already available session; first sign-in and recovery require a connection. Existing financial records are not deleted or automatically uploaded.
+
+Auth browser regression tests use intercepted mock Supabase responses (no real emails or real accounts): `npx playwright test --config playwright.auth.config.ts`. This builds with a fake test project and checks gating, rejected credentials, session persistence, sign-out, callback errors, email rate limits and password recovery. Rebuild with your real environment variables before deploying.

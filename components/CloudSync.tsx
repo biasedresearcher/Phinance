@@ -7,6 +7,7 @@ import {
   replaceData,
   useFinanceData,
 } from "@/lib/use-finance-data";
+import { PasswordForm } from "./AuthGate";
 import { Field, Notice } from "./finance/UI";
 export function CloudSync() {
   const { data, demo, error: storageError } = useFinanceData();
@@ -161,6 +162,14 @@ export function CloudSync() {
               Sign out
             </button>
           </div>
+          <details className="border-t border-[var(--border)] pt-3">
+            <summary className="cursor-pointer font-semibold">
+              Set or change your password
+            </summary>
+            <div className="mt-3">
+              <PasswordForm client={client} />
+            </div>
+          </details>
           {remote ? (
             <div className="space-y-3 border-t border-[var(--border)] pt-3">
               <p>
