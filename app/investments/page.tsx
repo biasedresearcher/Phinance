@@ -1,166 +1,290 @@
 "use client";
-
+import { useState, type FormEvent } from "react";
 import { AppShell } from "@/components/AppShell";
-import { formatCurrency } from "@/lib/finance-utils";
-import { InvestmentEntry, InvestmentType } from "@/lib/types";
+import { Field, Empty, Notice } from "@/components/finance/UI";
+import { TransactionForm } from "@/components/finance/TransactionForm";
+import { TransactionList } from "@/components/finance/TransactionList";
 import { useFinanceData } from "@/lib/use-finance-data";
-import { FormEvent, useState } from "react";
-
-const defaultForm = {
-  type: "SIP" as InvestmentType,
-  amount: "",
-  currentValue: "",
-  date: new Date().toISOString().slice(0, 10),
-};
-
+import { localDate, localMonth } from "@/lib/dates";
+import { formatCurrency, sumMoney, money } from "@/lib/finance-utils";
+import type { Investment } from "@/lib/types";
 export default function InvestmentsPage() {
   const { data, setData } = useFinanceData();
-  const [form, setForm] = useState(defaultForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newEntryId, setNewEntryId] = useState<string | null>(null);
-
-  const onSubmit = (event: FormEvent) => {
-    event.preventDefault();
-
-    const amount = Number(form.amount);
-    const currentValue = Number(form.currentValue);
-
-    if (!amount || !currentValue || !form.date) {
-      return;
-    }
-
-    if (editingId) {
-      setData((current) => ({
-        ...current,
-        investments: current.investments.map((entry) =>
-          entry.id === editingId ? { ...entry, type: form.type, amount, currentValue, date: form.date } : entry,
-        ),
-      }));
-      setEditingId(null);
-      setForm(defaultForm);
-      return;
-    }
-
-    const entry: InvestmentEntry = {
-      id: crypto.randomUUID(),
-      type: form.type,
-      amount,
-      currentValue,
-      date: form.date,
+  const [editing, setEditing] = useState<string>();
+  const [contribute, setContribute] = useState<string>();
+  const blank = () => ({
+    name: "",
+    type: "SIP" as Investment["type"],
+    currentValue: "0",
+    valuedOn: localDate(),
+    units: "",
+    sipAmount: "0",
+    sipDay: "1",
+    startMonth: localMonth(),
+  });
+  const [form, setForm] = useState(blank);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const record: Investment = {
+      ...form,
+      id: editing ?? crypto.randomUUID(),
+      currentValue: Number(form.currentValue),
+      units: form.units === "" ? undefined : Number(form.units),
+      sipAmount: form.type === "SIP" ? Number(form.sipAmount) : 0,
+      sipDay: Number(form.sipDay),
     };
-
-    setData((current) => ({ ...current, investments: [entry, ...current.investments] }));
-    setNewEntryId(entry.id);
-    setForm((current) => ({ ...current, amount: "", currentValue: "" }));
-    window.setTimeout(() => setNewEntryId((id) => (id === entry.id ? null : id)), 500);
-  };
-
-  const onEdit = (entry: InvestmentEntry) => {
-    setEditingId(entry.id);
-    setForm({
-      type: entry.type,
-      amount: String(entry.amount),
-      currentValue: String(entry.currentValue),
-      date: entry.date,
-    });
-  };
-
-  const onDelete = (id: string) => {
-    if (!window.confirm("Delete this investment entry?")) {
-      return;
-    }
-
-    setData((current) => ({ ...current, investments: current.investments.filter((entry) => entry.id !== id) }));
-    if (editingId === id) {
-      setEditingId(null);
-      setForm(defaultForm);
+    if (
+      await setData((d) => ({
+        ...d,
+        investments: editing
+          ? d.investments.map((i) => (i.id === editing ? record : i))
+          : [...d.investments, record],
+      }))
+    ) {
+      setEditing(undefined);
+      setForm(blank());
     }
   };
-
   return (
-    <AppShell title="Investments" subtitle="Log SIP and lump-sum investments with current market value.">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <form className="app-card space-y-4 p-5 lg:col-span-2" onSubmit={onSubmit}>
-          <h2 className="text-xl font-semibold">{editingId ? "Edit Investment" : "Add Investment"}</h2>
-          <select
-            className="app-input"
-            value={form.type}
-            onChange={(e) => setForm((s) => ({ ...s, type: e.target.value as InvestmentType }))}
-          >
-            <option value="SIP">SIP</option>
-            <option value="Lump Sum">Lump Sum</option>
-          </select>
-          <input
-            className="app-input"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            placeholder="Invested amount"
-            value={form.amount}
-            onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
-          />
-          <input
-            className="app-input"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            placeholder="Current value"
-            value={form.currentValue}
-            onChange={(e) => setForm((s) => ({ ...s, currentValue: e.target.value }))}
-          />
-          <input
-            className="app-input"
-            type="date"
-            required
-            value={form.date}
-            onChange={(e) => setForm((s) => ({ ...s, date: e.target.value }))}
-          />
+    <AppShell
+      title="Investments"
+      subtitle="Keep contributions, recurring plans, and dated valuations separate."
+    >
+      <Notice>
+        Values are entered manually; they are not live market prices. Creating
+        an investment or changing its valuation does not move cash. Record a
+        contribution when money actually leaves your account. Pausing a SIP
+        means setting its planned amount to zero.
+      </Notice>
+      <div className="grid items-start gap-6 lg:grid-cols-[360px_1fr]">
+        <form onSubmit={submit} className="app-card space-y-4 p-5">
+          <h2 className="text-xl font-semibold">
+            {editing ? "Update investment" : "Add investment"}
+          </h2>
+          <Field label="Investment / fund name">
+            <input
+              className="app-input"
+              required
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            />
+          </Field>
+          <Field label="Contribution method">
+            <select
+              className="app-input"
+              value={form.type}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  type: e.target.value as Investment["type"],
+                }))
+              }
+            >
+              <option>SIP</option>
+              <option>Lump Sum</option>
+            </select>
+          </Field>
+          <Field label="Current value (₹)">
+            <input
+              className="app-input"
+              required
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.currentValue}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, currentValue: e.target.value }))
+              }
+            />
+          </Field>
+          <Field label="Valuation date">
+            <input
+              className="app-input"
+              required
+              type="date"
+              max={localDate()}
+              value={form.valuedOn}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, valuedOn: e.target.value }))
+              }
+            />
+          </Field>
+          <Field label="Units held (optional)">
+            <input
+              className="app-input"
+              type="number"
+              min="0"
+              step="any"
+              value={form.units}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, units: e.target.value }))
+              }
+            />
+          </Field>
+          {form.type === "SIP" ? (
+            <>
+              <Field label="Planned monthly contribution (₹)">
+                <input
+                  className="app-input"
+                  type="number"
+                  required
+                  min="0"
+                  step="0.01"
+                  value={form.sipAmount}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, sipAmount: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Contribution day">
+                <input
+                  className="app-input"
+                  type="number"
+                  required
+                  min="1"
+                  max="31"
+                  value={form.sipDay}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, sipDay: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Schedule starts">
+                <input
+                  className="app-input"
+                  type="month"
+                  required
+                  value={form.startMonth}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, startMonth: e.target.value }))
+                  }
+                />
+              </Field>
+            </>
+          ) : null}
           <button className="app-button-primary" type="submit">
-            {editingId ? "Update Investment" : "Add Investment"}
+            {editing ? "Save investment changes" : "Save investment"}
           </button>
-          {editingId ? (
+          {editing ? (
             <button
               className="app-button-secondary"
               type="button"
               onClick={() => {
-                setEditingId(null);
-                setForm(defaultForm);
+                setEditing(undefined);
+                setForm(blank());
               }}
             >
-              Cancel Edit
+              Cancel
             </button>
           ) : null}
         </form>
-
-        <div className="grid grid-cols-1 gap-4 lg:col-span-3 sm:grid-cols-2">
-          {data.investments.map((entry) => {
-            const gain = entry.currentValue - entry.amount;
-            return (
-              <article className={`app-card p-5 ${newEntryId === entry.id ? "app-entry-new" : ""}`} key={entry.id}>
-                <p className="text-sm font-medium text-[var(--muted-foreground)]">{entry.type}</p>
-                <p className="text-xs text-[var(--muted-foreground)]">{entry.date}</p>
-                <p className="mt-3 text-sm">Invested: {formatCurrency(entry.amount)}</p>
-                <p className="text-sm">Current: {formatCurrency(entry.currentValue)}</p>
-                <p
-                  className={`mt-3 text-sm font-semibold ${gain >= 0 ? "text-[var(--olive-strong)]" : "text-[var(--accent-strong)]"}`}
-                >
-                  {gain >= 0 ? "Gain" : "Loss"}: {formatCurrency(gain)}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <button className="app-button-secondary flex-1" type="button" onClick={() => onEdit(entry)}>
-                    Edit
-                  </button>
-                  <button className="app-button-danger flex-1" type="button" onClick={() => onDelete(entry.id)}>
-                    Delete
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+        <div className="space-y-4">
+          {data.investments.length ? (
+            data.investments.map((i) => {
+              const rows = data.transactions.filter(
+                (t) => t.investmentId === i.id && t.date <= localDate(),
+              );
+              const invested = sumMoney(rows.map((t) => t.amount));
+              const atValuation = sumMoney(
+                rows
+                  .filter((t) => i.valuedOn && t.date <= i.valuedOn)
+                  .map((t) => t.amount),
+              );
+              return (
+                <article key={i.id} className="app-card space-y-3 p-5">
+                  <h2 className="text-xl font-semibold">{i.name}</h2>
+                  <p>
+                    {i.type}{" "}
+                    {i.sipAmount > 0
+                      ? `· planned ${formatCurrency(i.sipAmount)} monthly on day ${i.sipDay}`
+                      : ""}
+                  </p>
+                  <p>
+                    Recorded contributions:{" "}
+                    <strong>{formatCurrency(invested)}</strong>
+                  </p>
+                  <p>
+                    Value: <strong>{formatCurrency(i.currentValue)}</strong> ·{" "}
+                    {i.valuedOn || "Valuation date needs review"}
+                  </p>
+                  {i.valuedOn ? (
+                    <p>
+                      Change versus recorded contributions through valuation
+                      date:{" "}
+                      <strong>
+                        {formatCurrency(money(i.currentValue - atValuation))}
+                      </strong>
+                    </p>
+                  ) : null}
+                  <p className="text-xs">
+                    Only meaningful if all contributions through the valuation
+                    date are recorded.
+                    {i.units !== undefined ? ` Units held: ${i.units}.` : ""}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="app-button-secondary"
+                      type="button"
+                      onClick={() =>
+                        setContribute(contribute === i.id ? undefined : i.id)
+                      }
+                    >
+                      Record contribution
+                    </button>
+                    <button
+                      className="app-button-secondary"
+                      type="button"
+                      onClick={() => {
+                        setEditing(i.id);
+                        setForm({
+                          ...i,
+                          currentValue: String(i.currentValue),
+                          units: i.units === undefined ? "" : String(i.units),
+                          sipAmount: String(i.sipAmount),
+                          sipDay: String(i.sipDay),
+                        });
+                      }}
+                    >
+                      Edit / value
+                    </button>
+                    <button
+                      className="app-button-danger"
+                      type="button"
+                      disabled={rows.length > 0}
+                      title="Remove linked contributions before deleting an investment"
+                      onClick={() => {
+                        if (confirm(`Delete ${i.name}?`))
+                          void setData((d) => ({
+                            ...d,
+                            investments: d.investments.filter(
+                              (x) => x.id !== i.id,
+                            ),
+                          }));
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  {contribute === i.id ? (
+                    <TransactionForm
+                      key={i.id}
+                      fixedKind="investment"
+                      defaults={{ investmentId: i.id, amount: i.sipAmount }}
+                      onDone={() => setContribute(undefined)}
+                    />
+                  ) : null}
+                </article>
+              );
+            })
+          ) : (
+            <Empty>No investments recorded yet.</Empty>
+          )}
         </div>
       </div>
+      <h2 className="text-xl font-semibold">Contribution history</h2>
+      <TransactionList
+        rows={data.transactions.filter((t) => t.kind === "investment")}
+      />
     </AppShell>
   );
 }

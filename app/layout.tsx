@@ -1,16 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
-
 export const metadata: Metadata = {
   title: "Phinance",
-  description: "Personal finance tracker PWA",
+  description: "Personal salary and finance tracker",
   manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Phinance", statusBarStyle: "default" },
+  icons: { icon: "/icon-192.png", apple: "/icon-192.png" },
 };
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export const viewport: Viewport = { themeColor: "#b75e3b" };
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en">
+      <body>{children}</body>
     </html>
   );
 }
