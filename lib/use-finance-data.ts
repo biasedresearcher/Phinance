@@ -93,8 +93,16 @@ function initialize() {
 }
 export async function updateData(
   update: FinanceData | ((current: FinanceData) => FinanceData),
+  expectedRaw?: string | null,
+  canApply: () => boolean = () => true,
 ): Promise<boolean> {
   const save = async () => {
+    if (!canApply()) return false;
+    if (
+      expectedRaw !== undefined &&
+      (state.raw !== expectedRaw || state.demo || state.error)
+    )
+      return false;
     try {
       if (!state.ready || state.recoveryRaw !== null)
         throw new Error(
@@ -242,3 +250,6 @@ export function useFinanceData() {
   useEffect(initialize, []);
   return { ...snapshot, setData: updateData, reload: reloadData };
 }
+
+// Sync reads the latest store, not a stale render captured before a request.
+export const getFinanceSnapshot = () => state;

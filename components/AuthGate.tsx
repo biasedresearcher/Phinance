@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { cloudClient } from "@/lib/cloud";
+import { AutoSync } from "./AutoSync";
 import { Field } from "./finance/UI";
 
 function message(error: unknown) {
@@ -295,7 +296,17 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
   if (state.ready && (!state.client || (state.session && !recovery)))
-    return children;
+    return (
+      <>
+        {children}
+        {state.session && (
+          <AutoSync
+            key={state.session.user.id}
+            userId={state.session.user.id}
+          />
+        )}
+      </>
+    );
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4 py-10">
       <section className="app-card space-y-5 p-6 sm:p-8">
@@ -326,8 +337,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           </>
         )}
         <p className="text-xs text-[var(--muted-foreground)]">
-          Existing records stay on this device. Signing in does not upload them
-          automatically. Use a private browser profile for your finances.
+          Existing records stay on this device and sync automatically with your
+          signed-in account. Use a private browser profile for your finances.
         </p>
       </section>
     </main>

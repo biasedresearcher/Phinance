@@ -65,7 +65,7 @@ export function AppShell({
           </nav>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-7xl space-y-5 px-4 py-7 md:px-6">
+      <main id="main" className="mx-auto max-w-7xl space-y-5 px-4 pt-7 pb-24 md:px-6">
         <PwaStatus />
         {demo ? (
           <div className="status-banner">
