@@ -307,7 +307,7 @@ export function commitments(
           id: `loan:${loan.id}:${date}`,
           kind: "loan",
           referenceId: loan.id,
-          name: loan.name,
+          name: loan.cardName ? `${loan.name} · ${loan.cardName}` : loan.name,
           date,
           amount: rupees(amount),
           category: "Loan payments",

@@ -152,6 +152,26 @@ export function validateData(value: unknown): FinanceData {
     loans: list(d.loans, "Loans", (l) => ({
       id: text(l.id, "Loan ID"),
       name: text(l.name, "Loan name"),
+      ...(l.cardName !== undefined
+        ? { cardName: text(l.cardName, "Credit card name") }
+        : {}),
+      ...(l.balanceBasis !== undefined
+        ? {
+            balanceBasis: choice(
+              l.balanceBasis,
+              ["purchase", "remaining"] as const,
+              "EMI tracking basis",
+            ),
+          }
+        : {}),
+      ...(l.firstStatementDate !== undefined
+        ? {
+            firstStatementDate: date(
+              l.firstStatementDate,
+              "EMI statement date",
+            ),
+          }
+        : {}),
       amount: amount(l.amount, "Loan principal", 0.01),
       interestRate: num(l.interestRate, "Annual interest rate", 0, 100),
       monthlyInstallment: amount(
@@ -218,9 +238,20 @@ export function validateData(value: unknown): FinanceData {
     data.budgets.length
   )
     fail("Only one budget per category and month is allowed.");
-  for (const loan of data.loans)
+  for (const loan of data.loans) {
     if (loan.firstDueDate <= loan.startDate)
-      fail("First loan due date must follow the opening date.");
+      fail(
+        "The first tracked bill-payment due date must follow the purchase or balance date.",
+      );
+    if (loan.firstStatementDate && loan.firstStatementDate > loan.firstDueDate)
+      fail("The EMI statement date cannot be after its bill-payment due date.");
+    if (
+      loan.balanceBasis === "purchase" &&
+      loan.firstStatementDate &&
+      loan.firstStatementDate < loan.startDate
+    )
+      fail("The first EMI statement cannot be before the purchase date.");
+  }
   for (const bill of data.bills)
     if (bill.endMonth && bill.endMonth < bill.startMonth)
       fail("A bill cannot end before it starts.");

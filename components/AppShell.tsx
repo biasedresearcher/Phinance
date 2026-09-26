@@ -10,7 +10,7 @@ const links = [
   ["/salary", "Salary"],
   ["/accounts", "Accounts"],
   ["/planner", "Plan"],
-  ["/emi", "Loans"],
+  ["/emi", "Card EMIs"],
   ["/investments", "Investments"],
   ["/settings", "Settings"],
 ];

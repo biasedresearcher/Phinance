@@ -24,6 +24,9 @@ export interface Transaction {
   occurrence?: string;
 }
 export interface Loan {
+  cardName?: string;
+  balanceBasis?: "purchase" | "remaining";
+  firstStatementDate?: string;
   id: string;
   name: string;
   amount: number;

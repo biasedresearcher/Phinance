@@ -37,6 +37,16 @@ Open the app once while online and wait for **Offline access ready on this devic
 - **Investments:** contributions are actual cash movements. Valuations are manually entered snapshots with an as-of date; updating a valuation does not move cash. The displayed change compares value only with recorded contributions through that valuation date. Record all historical contributions for it to be meaningful. Units are an optional current holding record, not an automatically maintained trade ledger.
 - **SIP schedule:** a monthly commitment reduced by actual contributions in that calendar month. A planned contribution does not create a cash transaction. Set its planned amount to zero to pause it.
 
+## Credit card EMI dates
+
+The Card EMIs screen separates the purchase/EMI booking date, the optional first statement containing the EMI, and the payment due date for that bill. The first payment date must be entered from the issuer's statement or EMI schedule; it is never inferred from, or reset when editing, the purchase date. A preview shows the following two monthly payment dates, including month-end handling. Statement generation is informational and does not record a bank-account payment.
+
+Use a card nickname (optionally last four digits) to identify the card billed. Saved card names are suggested for other EMIs and appear in planning/payment selectors. The bank account selected when recording the actual payment is separate. Record only the EMI portion of a paid card bill against the EMI; do not also enter the same amount as another expense. A complete card-statement reconciliation system is not included.
+
+Choose **A new EMI purchase** for the original financed amount and booking date, or **An EMI I am already paying** for the remaining principal and its balance date, followed by the next unpaid bill's due date. Existing records without these optional fields remain compatible, with their dates and amounts unchanged; editing them uses the remaining-balance wording.
+
+Issuer-specific first-period interest, fees, GST and billing-cycle changes are not automatically calculated. The payment dates are user-confirmed; principal/interest figures remain monthly reducing-balance estimates. Refresh every device after updating so older clients do not discard the newly added optional card fields during sync.
+
 ## Loan assumptions
 
 Enter either the original principal and original opening date, with all subsequent payments, or the lender's current outstanding principal and the date of that balance. Do not combine both approaches.
