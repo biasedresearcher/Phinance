@@ -36,6 +36,7 @@ export function ExpenseBreakdownChart({
             innerRadius={62}
             outerRadius={98}
             paddingAngle={2}
+            isAnimationActive={false}
           >
             {data.map((entry, index) => (
               <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
@@ -64,7 +65,15 @@ export function ExpenseBreakdownChart({
               className="inline-block h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: COLORS[index % COLORS.length] }}
             />
-            <span className="text-[var(--muted-foreground)]">{item.name}</span>
+            <span className="text-[var(--muted-foreground)]">
+              {item.name} ·{" "}
+              {Math.round(
+                (item.value /
+                  data.reduce((total, row) => total + row.value, 0)) *
+                  100,
+              )}
+              %
+            </span>
             <span className="ml-auto font-semibold text-[var(--foreground)]">
               ₹{item.value.toLocaleString("en-IN")}
             </span>
