@@ -14,17 +14,22 @@ export default function LoansPage() {
   const [pay, setPay] = useState<string>();
   const blank = () => ({
     name: "",
+    cardName: "",
+    balanceBasis: "purchase" as "purchase" | "remaining",
+    firstStatementDate: "",
     amount: "",
     interestRate: "",
     monthlyInstallment: "",
     startDate: localDate(),
-    firstDueDate: addMonths(localDate(), 1),
+    firstDueDate: "",
   });
   const [form, setForm] = useState(blank);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const loan: Loan = {
       ...form,
+      cardName: form.cardName.trim() || undefined,
+      firstStatementDate: form.firstStatementDate || undefined,
       id: editing ?? crypto.randomUUID(),
       amount: Number(form.amount),
       interestRate: Number(form.interestRate),
@@ -44,20 +49,21 @@ export default function LoansPage() {
   };
   return (
     <AppShell
-      title="Loans & EMI"
-      subtitle="Record actual payments. Time passing alone never reduces your loan principal."
+      title="Credit card EMIs"
+      subtitle="Track each EMI purchase, the card it is billed to, and when that card bill must be paid."
     >
       <Notice>
-        For an existing loan, enter the lender’s outstanding principal as the
-        opening amount and choose its balance date. Estimates assume a fixed
-        annual rate, monthly reducing balance, and interest on each due date
-        before payments. They exclude fees, daily interest, rate resets, and
-        penalties. Reconcile with your lender’s statement.
+        A purchase date, the statement that first includes its EMI, and that
+        statement’s payment due date are different. Use the dates shown by your
+        card issuer—even when the first EMI falls in a later month. Adding an
+        EMI or generating a statement does not deduct money from your bank
+        account; record the EMI portion when you pay the card bill, without also
+        logging that same amount as a separate expense.
       </Notice>
       <div className="grid items-start gap-6 lg:grid-cols-[360px_1fr]">
         <form onSubmit={submit} className="app-card space-y-4 p-5">
           <h2 className="text-xl font-semibold">
-            {editing ? "Edit loan" : "Add loan"}
+            {editing ? "Edit EMI" : "Add credit card EMI"}
           </h2>
           <Field label="Loan name">
             <input
@@ -67,8 +73,52 @@ export default function LoansPage() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
           </Field>
+          <Field label="Credit card">
+            <input
+              className="app-input"
+              list="emi-cards"
+              maxLength={100}
+              placeholder="e.g. HDFC Millennia · 1234"
+              required={!editing || !!form.cardName}
+              value={form.cardName}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, cardName: e.target.value }))
+              }
+            />
+          </Field>
+          <datalist id="emi-cards">
+            {Array.from(
+              new Set(data.loans.map((l) => l.cardName).filter(Boolean)),
+            ).map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+          <p className="text-xs">
+            Card nickname and optionally its last four digits. This identifies
+            the card billed, not the bank account used to pay the bill.
+          </p>
+          <Field label="What are you adding?">
+            <select
+              className="app-input"
+              value={form.balanceBasis}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  balanceBasis: e.target.value as "purchase" | "remaining",
+                }))
+              }
+            >
+              <option value="purchase">A new EMI purchase</option>
+              <option value="remaining">An EMI I am already paying</option>
+            </select>
+          </Field>
           {[
-            ["amount", "Opening principal (₹)"],
+            [
+              "amount",
+              form.balanceBasis === "purchase"
+                ? "Amount converted to EMI (₹)"
+                : "Remaining principal (₹)",
+            ],
             ["interestRate", "Annual interest rate (%)"],
             ["monthlyInstallment", "Monthly instalment (₹)"],
           ].map(([key, label]) => (
@@ -87,7 +137,13 @@ export default function LoansPage() {
               />
             </Field>
           ))}
-          <Field label="Opening balance date">
+          <Field
+            label={
+              form.balanceBasis === "purchase"
+                ? "Purchase / EMI booking date"
+                : "Remaining balance as of"
+            }
+          >
             <input
               className="app-input"
               required
@@ -98,14 +154,48 @@ export default function LoansPage() {
                 setForm((f) => ({
                   ...f,
                   startDate: e.target.value,
-                  firstDueDate: e.target.value
-                    ? addMonths(e.target.value, 1)
-                    : "",
                 }))
               }
             />
           </Field>
-          <Field label="First instalment due after opening">
+          {form.balanceBasis === "remaining" && (
+            <p className="text-xs">
+              Use the outstanding principal and its date from your issuer. Track
+              only payments after this balance date; earlier repayments are
+              already reflected in that amount.
+            </p>
+          )}
+          <Field
+            label={
+              form.balanceBasis === "purchase"
+                ? "First statement containing this EMI (optional)"
+                : "Next unpaid EMI statement date (optional)"
+            }
+          >
+            <input
+              className="app-input"
+              type="date"
+              min={
+                form.balanceBasis === "purchase" ? form.startDate : undefined
+              }
+              max={form.firstDueDate || undefined}
+              value={form.firstStatementDate}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, firstStatementDate: e.target.value }))
+              }
+            />
+          </Field>
+          <p className="text-xs">
+            The bill-generation date, not the date money leaves your bank. Leave
+            blank if your first statement has not arrived.
+          </p>
+          <Field
+            label={
+              form.balanceBasis === "purchase"
+                ? "First EMI bill payment due date"
+                : "Next unpaid EMI bill payment due date"
+            }
+          >
             <input
               className="app-input"
               required
@@ -117,6 +207,49 @@ export default function LoansPage() {
               }
             />
           </Field>
+          <p className="text-xs">
+            Copy the payment due date from the card statement or issuer’s EMI
+            schedule. It can be in a later month; it is never inferred from the
+            purchase date.
+          </p>
+          {form.firstDueDate && (
+            <section
+              aria-label="EMI schedule preview"
+              className="rounded-xl border border-[var(--border)] p-3 text-sm space-y-2"
+            >
+              <p>
+                <strong>Your EMI timeline</strong>
+              </p>
+              <p>
+                {form.balanceBasis === "purchase"
+                  ? "Purchase / booking"
+                  : "Balance recorded"}
+                : {form.startDate || "Choose a date"}
+              </p>
+              <p>
+                First tracked statement:{" "}
+                {form.firstStatementDate || "Not entered"}
+              </p>
+              <p>
+                First tracked payment due: <strong>{form.firstDueDate}</strong>
+              </p>
+              <p>
+                Following monthly due dates:{" "}
+                {[1, 2].map((n) => addMonths(form.firstDueDate, n)).join(" · ")}
+              </p>
+              <p className="text-xs">
+                Planning dates assume the same payment due day each month,
+                capped at month-end. Check your issuer’s actual dates if the
+                billing cycle changes.
+              </p>
+            </section>
+          )}
+          <Notice>
+            Balance and interest figures are estimates using monthly
+            reducing-balance interest. Card issuers may bill different
+            first-period interest, fees and GST. Use the issuer’s EMI schedule
+            for exact charges; these extras are not included here.
+          </Notice>
           {editing ? (
             <Notice>
               Changing terms recalculates the estimate for all recorded
@@ -125,7 +258,7 @@ export default function LoansPage() {
             </Notice>
           ) : null}
           <button className="app-button-primary" type="submit">
-            {editing ? "Save loan changes" : "Save loan"}
+            {editing ? "Save EMI changes" : "Save EMI"}
           </button>
           {editing ? (
             <button
@@ -147,14 +280,18 @@ export default function LoansPage() {
               return (
                 <article className="app-card space-y-3 p-5" key={l.id}>
                   <h2 className="text-xl font-semibold">{l.name}</h2>
+                  <p className="text-sm font-semibold">
+                    Billed to:{" "}
+                    {l.cardName || "Card not specified — edit to add one"}
+                  </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <p>
-                      Principal remaining
+                      Estimated principal remaining
                       <br />
                       <strong>{formatCurrency(s.principal)}</strong>
                     </p>
                     <p>
-                      Accrued unpaid interest
+                      Estimated unpaid interest
                       <br />
                       <strong>{formatCurrency(s.accruedInterest)}</strong>
                     </p>
@@ -174,8 +311,19 @@ export default function LoansPage() {
                     </p>
                   </div>
                   <p className="text-xs">
-                    {l.interestRate}% annually · first due {l.firstDueDate} ·
-                    estimates as of {localDate()}
+                    {l.interestRate}% annually · first tracked bill payment due{" "}
+                    {l.firstDueDate} · estimates as of {localDate()}
+                  </p>
+                  {l.firstStatementDate && (
+                    <p className="text-xs">
+                      First tracked EMI statement: {l.firstStatementDate}
+                    </p>
+                  )}
+                  <p className="text-xs">
+                    {l.balanceBasis === "purchase"
+                      ? "Purchase / booking"
+                      : "Starting balance as of"}
+                    : {l.startDate}
                   </p>
                   {s.overpayment > 0 ? (
                     <p role="alert">
@@ -198,6 +346,9 @@ export default function LoansPage() {
                         setEditing(l.id);
                         setForm({
                           ...l,
+                          cardName: l.cardName ?? "",
+                          balanceBasis: l.balanceBasis ?? "remaining",
+                          firstStatementDate: l.firstStatementDate ?? "",
                           amount: String(l.amount),
                           interestRate: String(l.interestRate),
                           monthlyInstallment: String(l.monthlyInstallment),
@@ -240,12 +391,13 @@ export default function LoansPage() {
             })
           ) : (
             <Empty>
-              No loans recorded. Add one only if you have an outstanding loan.
+              No EMIs recorded. Add a purchase converted to EMI and the credit
+              card it is billed to.
             </Empty>
           )}
         </div>
       </div>
-      <h2 className="text-xl font-semibold">Recorded loan payments</h2>
+      <h2 className="text-xl font-semibold">Recorded EMI payments</h2>
       <TransactionList
         rows={data.transactions.filter((t) => t.kind === "loan_payment")}
       />

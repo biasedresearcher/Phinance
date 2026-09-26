@@ -296,6 +296,7 @@ export function TransactionForm({
             {data.loans.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.name}
+                {l.cardName ? ` · ${l.cardName}` : ""}
               </option>
             ))}
           </select>

@@ -265,3 +265,57 @@ test("corrupt local data is recoverable without sample replacement", async ({
     "{corrupt",
   );
 });
+
+test("credit-card EMI dates are independent and card details persist on editing", async ({
+  page,
+}) => {
+  await page.goto("/emi");
+  await page.getByLabel("Loan name", { exact: true }).fill("Phone EMI");
+  await page
+    .getByLabel("Credit card", { exact: true })
+    .fill("HDFC Millennia · 1234");
+  await page.getByLabel("Amount converted to EMI (₹)").fill("12000");
+  await page.getByLabel("Annual interest rate (%)").fill("12");
+  await page.getByLabel("Monthly instalment (₹)").fill("1100");
+  await page
+    .getByLabel("Purchase / EMI booking date", { exact: true })
+    .fill("2026-08-29");
+  await expect(
+    page.getByLabel("First EMI bill payment due date", { exact: true }),
+  ).toHaveValue("");
+  await page
+    .getByLabel("First statement containing this EMI (optional)")
+    .fill("2026-10-05");
+  await page
+    .getByLabel("First EMI bill payment due date", { exact: true })
+    .fill("2026-10-25");
+  await page
+    .getByLabel("Purchase / EMI booking date", { exact: true })
+    .fill("2026-08-30");
+  await expect(
+    page.getByLabel("First EMI bill payment due date", { exact: true }),
+  ).toHaveValue("2026-10-25");
+  await expect(
+    page.getByRole("region", { name: "EMI schedule preview" }),
+  ).toContainText("2026-11-25 · 2026-12-25");
+  await page.getByRole("button", { name: "Save EMI", exact: true }).click();
+  await page.reload();
+  const record = page
+    .getByRole("article")
+    .filter({
+      has: page.getByRole("heading", { name: "Phone EMI", exact: true }),
+    });
+  await expect(record).toContainText("Billed to: HDFC Millennia · 1234");
+  await expect(record).toContainText("2026-10-25");
+  await record.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(page.getByLabel("Credit card", { exact: true })).toHaveValue(
+    "HDFC Millennia · 1234",
+  );
+  await expect(
+    page.getByLabel("First statement containing this EMI (optional)"),
+  ).toHaveValue("2026-10-05");
+  await page
+    .getByRole("button", { name: "Save EMI changes", exact: true })
+    .click();
+  await expect(record).toContainText("2026-10-05");
+});
