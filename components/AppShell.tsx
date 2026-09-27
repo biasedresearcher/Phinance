@@ -18,10 +18,12 @@ export function AppShell({
   title,
   subtitle,
   children,
+  compact = false,
 }: {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  compact?: boolean;
 }) {
   const path = usePathname();
   const { ready, error, savedAt, demo, reload, data, setData } =
@@ -32,8 +34,12 @@ export function AppShell({
         Skip to content
       </a>
       <header className="border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div
+          className={`mx-auto max-w-7xl px-4 md:px-6 ${compact ? "py-3" : "py-4"}`}
+        >
+          <div
+            className={`flex flex-wrap items-center justify-between gap-3 ${compact ? "mb-2" : "mb-4"}`}
+          >
             <a
               href="/"
               className="text-2xl font-bold text-[var(--accent-strong)]"
@@ -65,7 +71,10 @@ export function AppShell({
           </nav>
         </div>
       </header>
-      <main id="main" className="mx-auto max-w-7xl space-y-5 px-4 pt-7 pb-24 md:px-6">
+      <main
+        id="main"
+        className={`mx-auto max-w-7xl px-4 pb-24 md:px-6 ${compact ? "space-y-4 pt-4" : "space-y-5 pt-7"}`}
+      >
         <PwaStatus />
         {demo ? (
           <div className="status-banner">
@@ -110,8 +119,14 @@ export function AppShell({
           </div>
         ) : null}
         <div>
-          <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="mt-2 max-w-4xl text-[var(--muted-foreground)]">
+          <h1
+            className={`font-bold ${compact ? "text-2xl sm:text-3xl" : "text-3xl"}`}
+          >
+            {title}
+          </h1>
+          <p
+            className={`max-w-4xl text-[var(--muted-foreground)] ${compact ? "mt-1 text-sm" : "mt-2"}`}
+          >
             {subtitle}
           </p>
         </div>

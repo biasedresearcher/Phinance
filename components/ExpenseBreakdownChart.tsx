@@ -1,6 +1,7 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { formatCurrency } from "@/lib/finance-utils";
 
 const COLORS = [
   "#b75e3b",
@@ -25,57 +26,53 @@ export function ExpenseBreakdownChart({
     );
   }
 
+  const total = data.reduce((sum, row) => sum + row.value, 0);
   return (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={288}>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            innerRadius={62}
-            outerRadius={98}
-            paddingAngle={2}
-            isAnimationActive={false}
-          >
-            {data.map((entry, index) => (
-              <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              borderRadius: "12px",
-              borderColor: "#d3c2aa",
-              boxShadow: "0 10px 24px -16px rgba(61, 42, 27, 0.45)",
-              backgroundColor: "#f8f0e3",
-            }}
-            formatter={(value) =>
-              `₹${Number(value ?? 0).toLocaleString("en-IN")}`
-            }
-          />
-        </PieChart>
-      </ResponsiveContainer>
-      <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+    <div className="w-full min-w-0">
+      <div className="h-44 sm:h-48">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={48}
+              outerRadius={72}
+              paddingAngle={2}
+              isAnimationActive={false}
+            >
+              {data.map((entry, index) => (
+                <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{
+                borderRadius: "12px",
+                borderColor: "#d3c2aa",
+                boxShadow: "0 10px 24px -16px rgba(61, 42, 27, 0.45)",
+                backgroundColor: "#f8f0e3",
+              }}
+              formatter={(value) => formatCurrency(Number(value ?? 0))}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-2 space-y-1 text-sm">
         {data.map((item, index) => (
           <div
-            className="flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2"
+            className="flex items-baseline gap-2 border-b border-[var(--border)] py-2 last:border-0"
             key={item.name}
           >
             <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
+              className="inline-block h-2 w-2 shrink-0 rounded-full"
               style={{ backgroundColor: COLORS[index % COLORS.length] }}
             />
-            <span className="text-[var(--muted-foreground)]">
+            <span className="min-w-0 break-words text-[var(--muted-foreground)]">
               {item.name} ·{" "}
-              {Math.round(
-                (item.value /
-                  data.reduce((total, row) => total + row.value, 0)) *
-                  100,
-              )}
-              %
+              {total > 0 ? Math.round((item.value / total) * 100) : 0}%
             </span>
-            <span className="ml-auto font-semibold text-[var(--foreground)]">
-              ₹{item.value.toLocaleString("en-IN")}
+            <span className="ml-auto text-right font-semibold break-words text-[var(--foreground)] tabular-nums">
+              {formatCurrency(item.value)}
             </span>
           </div>
         ))}
