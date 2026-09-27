@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { DashboardInsights } from "@/components/DashboardInsights";
 import { AppShell } from "@/components/AppShell";
 import { ExpenseBreakdownChart } from "@/components/ExpenseBreakdownChart";
 import { Empty, Field, Notice, Stat } from "@/components/finance/UI";
@@ -52,7 +53,38 @@ export default function DashboardPage() {
           . Sample data is available separately in Settings.
         </Notice>
       ) : null}
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[#556533] to-[#34412b] p-6 text-[#fff8eb] sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-80">
+              Your payday outlook · Today
+            </p>
+            <h2 className="mt-3 text-lg">Available until payday</h2>
+            <p className="mt-1 text-4xl font-semibold tracking-tight sm:text-5xl">
+              {plan.incomplete
+                ? "Review accounts"
+                : formatCurrency(plan.available)}
+            </p>
+            <p className="mt-3 max-w-lg text-sm opacity-80">
+              After recorded commitments and protected money. Updates when your
+              entries change or cloud changes arrive.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/20 bg-white/10 p-5">
+            <p className="text-3xl font-semibold">
+              {Math.max(1, daysBetween(today, plan.payday))}
+              <span className="ml-2 text-sm font-normal">days to payday</span>
+            </p>
+            <p className="mt-2 text-sm">
+              {plan.incomplete
+                ? "Complete account assignments first"
+                : `${formatCurrency(daily)} daily allowance`}{" "}
+              · {plan.payday}
+            </p>
+          </div>
+        </div>
+      </section>
+      <section className="grid gap-4 sm:grid-cols-3">
         <Stat label="Spendable account balances" value={plan.cash} />
         <Stat
           label="Unpaid commitments before payday"
@@ -63,21 +95,6 @@ export default function DashboardPage() {
           label="Protected money within these accounts"
           value={plan.reserved}
         />
-        {plan.incomplete ? (
-          <div className="app-card p-5">
-            <p className="text-sm">Available until payday</p>
-            <p className="mt-2 font-semibold">Complete your accounts first</p>
-            <a href="/accounts" className="text-sm underline">
-              Review missing account assignments
-            </a>
-          </div>
-        ) : (
-          <Stat
-            label="Available until payday"
-            value={plan.available}
-            hint={`Next payday ${plan.payday} · ${formatCurrency(daily)} per day`}
-          />
-        )}
       </section>
       <Notice>
         This allowance uses recorded account balances and commitments. Expected
@@ -122,6 +139,11 @@ export default function DashboardPage() {
           hint="Excludes transfers; this is not your bank balance"
         />
       </section>
+      <DashboardInsights
+        data={data}
+        month={period === "cycle" ? today.slice(0, 7) : month || localMonth()}
+        today={today}
+      />
       <div className="grid items-start gap-6 lg:grid-cols-2">
         <section className="app-card p-5">
           <h2 className="mb-4 text-xl font-semibold">Where spending went</h2>

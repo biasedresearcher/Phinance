@@ -300,11 +300,9 @@ test("credit-card EMI dates are independent and card details persist on editing"
   ).toContainText("2026-11-25 · 2026-12-25");
   await page.getByRole("button", { name: "Save EMI", exact: true }).click();
   await page.reload();
-  const record = page
-    .getByRole("article")
-    .filter({
-      has: page.getByRole("heading", { name: "Phone EMI", exact: true }),
-    });
+  const record = page.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "Phone EMI", exact: true }),
+  });
   await expect(record).toContainText("Billed to: HDFC Millennia · 1234");
   await expect(record).toContainText("2026-10-25");
   await record.getByRole("button", { name: "Edit", exact: true }).click();
@@ -318,4 +316,56 @@ test("credit-card EMI dates are independent and card details persist on editing"
     .getByRole("button", { name: "Save EMI changes", exact: true })
     .click();
   await expect(record).toContainText("2026-10-05");
+});
+
+test("dashboard charts show recorded totals and fit a phone screen", async ({
+  page,
+}) => {
+  const d = fixture();
+  d.budgets = [
+    { id: "food-budget", category: "Food", month: "2026-09", amount: 500 },
+  ];
+  d.transactions.push({
+    id: "food",
+    kind: "expense",
+    amount: 600,
+    date: "2026-09-10",
+    accountId: "a",
+    category: "Food",
+    note: "Lunch",
+  });
+  await seed(page, d);
+  await expect(
+    page.getByRole("heading", { name: "Income & outflows" }),
+  ).toBeVisible();
+  await expect(page.getByText(/over budget · Limit/)).toBeVisible();
+  await page.getByText("View monthly figures").click();
+  await expect(
+    page.getByRole("row").filter({ hasText: "2026-09" }),
+  ).toContainText("49,400");
+  await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem("phinance-v2")!);
+    saved.data.transactions.find(
+      (tx: { id: string }) => tx.id === "food",
+    ).amount = 700;
+    saved.revision += 1;
+    localStorage.setItem("phinance-v2", JSON.stringify(saved));
+    window.dispatchEvent(new StorageEvent("storage", { key: "phinance-v2" }));
+  });
+  await expect(
+    page.getByRole("row").filter({ hasText: "2026-09" }),
+  ).toContainText("49,300");
+  await page.getByLabel("Month", { exact: true }).fill("2026-08");
+  await expect(page.getByText(/No budgets set for this month/)).toBeVisible();
+  await page.getByLabel("Month", { exact: true }).fill("2026-09");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: "test-results/dashboard-mobile.png",
+    fullPage: true,
+  });
 });
